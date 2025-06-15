@@ -3,7 +3,7 @@
 ;;;; For teaching basic Common Lisp HTTP operations
 
 ;;; Package management (keep as-is)
-#-quicklisp
+;;#-quicklisp
 (let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp"
                                        (user-homedir-pathname))))
   (when (probe-file quicklisp-init)
@@ -46,6 +46,7 @@
          (names (get-user-names users)))
     (print-names names)
     (format t "~&Total users: ~D~%" (length names))))
+(main)
 
 ;;; Usage:
 ;;; (load "main.lisp")
