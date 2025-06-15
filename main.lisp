@@ -115,7 +115,7 @@
 ;;     For more information, see http://www.quicklisp.org/beta/
 ;; 
 ;; NIL
-;; * (ql:system-apropos "vecto")
+; * (ql:system-apropos "vecto")
 ;; 
 ;; ; Fetching #<URL "http://beta.quicklisp.org/dist/quicklisp/2010-10-07/systems.txt">
 ;; ; 45.30KB
@@ -184,3 +184,19 @@
 ;; #P"/Users/quicklisp/.sbclrc"
 ;; * (quit)
 ;; $ 
+
+
+;;;; Single function to hit GoDaddy API
+
+(ql:quickload :dexador)
+
+(defun godaddy-check-domain (domain api-key api-secret)
+  "Check if domain is available via GoDaddy API"
+  (dexador:get (format nil "https://api.ote-godaddy.com/v1/domains/available?domain=~A" domain)
+               :headers `(("Authorization" . ,(format nil "sso-key ~A:~A" api-key api-secret)))))
+
+
+;;; Usage:
+;;; (godaddy-check-domain "example.guru" "YOUR_API_KEY" "YOUR_API_SECRET")
+
+;; (godaddy-check-domain "example77.xyz" "scrubbed-works!!!" "scrubbed-works!!!")
