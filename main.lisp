@@ -200,3 +200,53 @@
 ;;; (godaddy-check-domain "example.guru" "YOUR_API_KEY" "YOUR_API_SECRET")
 
 ;; (godaddy-check-domain "example77.xyz" "scrubbed-works!!!" "scrubbed-works!!!")
+;;;; Simple SQLite example with Mito and CL-DBI - KISS style
+
+(ql:quickload '(:mito :cl-dbi))
+
+;;; Define user table using mito:deftable (preferred way)
+(mito:deftable user ()
+  ((name :col-type (:varchar 64))
+   (email :col-type (:varchar 128))))
+
+;;; Demo Mito operations (high-level ORM)
+(defun mito-demo ()
+  "Demo Mito ORM operations"
+  ;; Connect using Mito
+  (mito:connect-toplevel :sqlite3 :database-name "test.db")
+  
+  ;; Create table
+  (mito:ensure-table-exists 'user)
+  
+  ;; Add users
+  (mito:create-dao 'user :name "Alice" :email "alice@example.com")
+  (mito:create-dao 'user :name "Bob" :email "bob@example.com")
+  
+  ;; Query users
+  (format t "Mito - All users:~%")
+  (dolist (user (mito:select-dao 'user))
+    (format t "  ID:~A ~A <~A>~%" 
+            (mito:object-id user) (user-name user) (user-email user))))
+
+;;; Demo CL-DBI operations (low-level SQL)
+(defun dbi-demo ()
+  "Demo CL-DBI raw SQL operations"
+  ;; Connect using DBI directly
+  (defvar *conn* (dbi:connect :sqlite3 :database-name "test.db"))
+  
+  ;; Raw SQL query
+  (let ((query (dbi:prepare *conn* "SELECT * FROM user")))
+    (format t "~%DBI - Raw SQL results:~%")
+    (loop for row = (dbi:fetch (dbi:execute query))
+          while row
+          do (format t "  ~A~%" row))))
+
+;;; Combined demo
+(defun demo ()
+  "Demo both Mito and CL-DBI"
+  (mito-demo)
+  (dbi-demo))
+
+;;; Usage:
+(demo)
+
