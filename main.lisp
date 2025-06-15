@@ -1,252 +1,239 @@
+;;;; User API Example - KISS Style
+;;;; Complete user management with HTTP client, database, and JSON
 
-;;;; Simple HTTP Client Example - KISS Style
-;;;; For teaching basic Common Lisp HTTP operations
-
-;;; Package management (keep as-is)
-;;#-quicklisp
-
+;;; Dependencies
+;;;; #-quicklisp
 (let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp"
                                        (user-homedir-pathname))))
   (when (probe-file quicklisp-init)
     (load quicklisp-init)))
 
-(ql:quickload '(:dexador :cl-json))
+(ql:quickload '(:dexador :cl-json :mito))
 
-(defpackage :simple-http
+(defpackage :user-api
   (:use :cl)
-  (:export #:main #:fetch-users #:get-user-names))
+  (:export #:user #:demo-all #:fetch-external-users #:create-local-user
+           #:find-user #:list-users #:update-user #:delete-user))
 
-(in-package :simple-http)
+(in-package :user-api)
 
-;;; Fetch JSON data from API
-(defun fetch-users ()
-  "Get users from JSONPlaceholder API"
-  (let ((response (dexador:get "https://jsonplaceholder.typicode.com/users")))
-    (cl-json:decode-json-from-string response)))
+;;; Database Setup
+(mito:connect-toplevel :sqlite3 :database-name "users.db")
 
-(fetch-users)
-
-;;; Extract and sort user names
-(defun get-user-emails (users)
-  "Extract names from user list and sort them"
-  (sort (mapcar (lambda (user)
-                  (cdr (assoc :email user)))
-                users)
-        #'string<))
-
-;;; Print formatted output
-(defun print-names (names)
-  "Print names in a simple format"
-  (format t "~&Users (sorted):~%")
-  (dolist (name names)
-    (format t "  ~A~%" name)))
-
-;;; Main function - does everything
-(defun main ()
-  "Fetch users, sort names, and display"
-  (format t "Fetching users from API...~%")
-  (let* ((users (fetch-users))
-         (names (get-user-emails users)))
-    (print-names names)
-    (format t "~&Total users: ~D~%" (length names))))
-(main)
-
-;;; Usage:
-;;; (load "main.lisp")
-;;; (simple-http:main)
-;;;
-;;; Or run from command line:
-;;; sbcl --load main.lisp --eval "(simple-http:main)" --quit
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-;;
-;; $ curl -O https://beta.quicklisp.org/quicklisp.lisp
-;;   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-;;                                  Dload  Upload   Total   Spent    Left  Speed
-;; 100 49843  100 49843    0     0  33639      0  0:00:01  0:00:01 --:--:-- 50397
-;; 
-;; $ curl -O https://beta.quicklisp.org/quicklisp.lisp.asc
-;; ...
-;; $ gpg --verify quicklisp.lisp.asc quicklisp.lisp
-;; gpg: Signature made Sat Feb  1 09:25:28 2014 EST using RSA key ID 028B5FF7
-;; gpg: Good signature from "Quicklisp Release Signing Key "
-;; $ sbcl --load quicklisp.lisp
-;; This is SBCL 1.0.42.52, an implementation of ANSI Common Lisp.
-;; More information about SBCL is available at <http://www.sbcl.org/>.
-;; 
-;; SBCL is free software, provided as is, with absolutely no warranty.
-;; It is mostly in the public domain; some portions are provided under
-;; BSD-style licenses.  See the CREDITS and COPYING files in the
-;; distribution for more information.
-;; 
-;;   ==== quicklisp quickstart loaded ====
-;; 
-;;     To continue, evaluate: (quicklisp-quickstart:install)
-;; 
-;; * (quicklisp-quickstart:install)
-;; 
-;; ; Fetching #<URL "http://beta.quicklisp.org/quickstart/asdf.lisp">
-;; ; 144.48KB
-;; ==================================================
-;; 147,949 bytes in 0.64 seconds (226.11KB/sec)
-;; ; Fetching #<URL "http://beta.quicklisp.org/quickstart/quicklisp.tar">
-;; ; 160.00KB
-;; ==================================================
-;; 163,840 bytes in 0.76 seconds (211.36KB/sec)
-;; ; Fetching #<URL "http://beta.quicklisp.org/quickstart/setup.lisp">
-;; ; 2.78KB
-;; ==================================================
-;; 2,846 bytes in 0.001 seconds (2779.30KB/sec)
-;; Upgrading ASDF package from version 2.004 to version 2.009
-;; ; Fetching #<URL "http://beta.quicklisp.org/dist/quicklisp.txt">
-;; ; 0.40KB
-;; ==================================================
-;; 408 bytes in 0.003 seconds (132.81KB/sec)
-;; 
-;;   ==== quicklisp installed ====
-;; 
-;;     To load a system, use: (ql:quickload "system-name")
-;; 
-;;     To find systems, use: (ql:system-apropos "term")
-;; 
-;;     To load Quicklisp every time you start Lisp, use: (ql:add-to-init-file)
-;; 
-;;     For more information, see http://www.quicklisp.org/beta/
-;; 
-;; NIL
-; * (ql:system-apropos "vecto")
-;; 
-;; ; Fetching #<URL "http://beta.quicklisp.org/dist/quicklisp/2010-10-07/systems.txt">
-;; ; 45.30KB
-;; ==================================================
-;; 46,386 bytes in 0.50 seconds (89.70KB/sec)
-;; ; Fetching #<URL "http://beta.quicklisp.org/dist/quicklisp/2010-10-07/releases.txt">
-;; ; 83.49KB
-;; ==================================================
-;; 85,490 bytes in 0.53 seconds (157.22KB/sec)
-;; #<SYSTEM cl-vectors / cl-vectors-20101006-git / quicklisp 2010-10-07>
-;; #<SYSTEM lispbuilder-sdl-cl-vectors / lispbuilder-20101006-svn / quicklisp 2010-10-07>
-;; #<SYSTEM lispbuilder-sdl-cl-vectors-examples / lispbuilder-20101006-svn / quicklisp 2010-10-07>
-;; #<SYSTEM lispbuilder-sdl-vecto / lispbuilder-20101006-svn / quicklisp 2010-10-07>
-;; #<SYSTEM lispbuilder-sdl-vecto-examples / lispbuilder-20101006-svn / quicklisp 2010-10-07>
-;; #<SYSTEM static-vectors / static-vectors-20101006-git / quicklisp 2010-10-07>
-;; #<SYSTEM vecto / vecto-1.4.3 / quicklisp 2010-10-07>
-;; NIL
-;; * (ql:quickload "vecto")
-;; To load "vecto":
-;;   Install 5 Quicklisp releases:
-;;     cl-vectors salza2 vecto zpb-ttf zpng
-;; ; Fetching #<URL "http://beta.quicklisp.org/archive/salza2/2010-10-06/salza2-2.0.7.tgz">
-;; ; 14.84KB
-;; ==================================================
-;; 15,197 bytes in 0.12 seconds (125.77KB/sec)
-;; ; Fetching #<URL "http://beta.quicklisp.org/archive/zpng/2010-10-06/zpng-1.2.tgz">
-;; ; 38.59KB
-;; ==================================================
-;; 39,521 bytes in 0.37 seconds (103.47KB/sec)
-;; ; Fetching #<URL "http://beta.quicklisp.org/archive/zpb-ttf/2010-10-06/zpb-ttf-1.0.tgz">
-;; ; 42.59KB
-;; ==================================================
-;; 43,611 bytes in 0.39 seconds (110.33KB/sec)
-;; ; Fetching #<URL "http://beta.quicklisp.org/archive/cl-vectors/2010-10-06/cl-vectors-20101006-git.tgz">
-;; ; 40.40KB
-;; ==================================================
-;; 41,374 bytes in 0.37 seconds (109.20KB/sec)
-;; ; Fetching #<URL "http://beta.quicklisp.org/archive/vecto/2010-10-06/vecto-1.4.3.tgz">
-;; ; 75.71KB
-;; ==================================================
-;; 77,526 bytes in 0.49 seconds (153.57KB/sec)
-;; ; Loading "vecto"
-;; ..................................................
-;; [package zpb-ttf].................................
-;; [package salza2]..................................
-;; [package zpng]....................................
-;; [package net.tuxee.paths].........................
-;; [package net.tuxee.aa]............................
-;; [package net.tuxee.aa-bin]........................
-;; [package net.tuxee.vectors].......................
-;; [package vecto]........
-;; ("vecto")
-;; * (ql:add-to-init-file)
-;; I will append the following lines to #P"/Users/quicklisp/.sbclrc":
-;; 
-;;   ;;; The following lines added by ql:add-to-init-file:
-;;   #-quicklisp
-;;   (let ((quicklisp-init (merge-pathnames "quicklisp/setup.lisp"
-;;                                          (user-homedir-pathname))))
-;;     (when (probe-file quicklisp-init)
-;;       (load quicklisp-init)))
-;; 
-;; Press Enter to continue.
-;; 
-;; 
-;; #P"/Users/quicklisp/.sbclrc"
-;; * (quit)
-;; $ 
-
-
-;;;; Single function to hit GoDaddy API
-
-(ql:quickload :dexador)
-
-(defun godaddy-check-domain (domain api-key api-secret)
-  "Check if domain is available via GoDaddy API"
-  (dexador:get (format nil "https://api.ote-godaddy.com/v1/domains/available?domain=~A" domain)
-               :headers `(("Authorization" . ,(format nil "sso-key ~A:~A" api-key api-secret)))))
-
-
-;;; Usage:
-;;; (godaddy-check-domain "example.guru" "YOUR_API_KEY" "YOUR_API_SECRET")
-
-;; (godaddy-check-domain "example77.xyz" "scrubbed-works!!!" "scrubbed-works!!!")
-;;;; Simple SQLite example with Mito and CL-DBI - KISS style
-
-(ql:quickload '(:mito :cl-dbi))
-
-;;; Define user table using mito:deftable (preferred way)
+;;; User Model
 (mito:deftable user ()
-  ((name :col-type (:varchar 64))
-   (email :col-type (:varchar 128))))
+  ((name :col-type (:varchar 100) :initarg :name :accessor user-name)
+   (email :col-type (:varchar 150) :initarg :email :accessor user-email)
+   (phone :col-type (:varchar 20) :initarg :phone :accessor user-phone)
+   (company :col-type (:varchar 100) :initarg :company :accessor user-company))
+  (:documentation "User table with basic contact info"))
 
-;;; Demo Mito operations (high-level ORM)
-(defun mito-demo ()
-  "Demo Mito ORM operations"
-  ;; Connect using Mito
-  (mito:connect-toplevel :sqlite3 :database-name "test.db")
+(mito:ensure-table-exists 'user)
+
+(comment
+  ;; HTTP Client Operations - Fetching external data
   
-  ;; Create table
-  (mito:ensure-table-exists 'user)
+  ;; Get all users from JSONPlaceholder
+  (defun fetch-external-users ()
+    "Fetch users from external API and return parsed JSON"
+    (let ((response (dexador:get "https://jsonplaceholder.typicode.com/users")))
+      (cl-json:decode-json-from-string response)))
   
-  ;; Add users
-  (mito:create-dao 'user :name "Alice" :email "alice@example.com")
-  (mito:create-dao 'user :name "Bob" :email "bob@example.com")
+  ;; Get single user by ID
+  (defun fetch-external-user (id)
+    "Fetch single user by ID from external API"
+    (let ((response (dexador:get (format nil "https://jsonplaceholder.typicode.com/users/~A" id))))
+      (cl-json:decode-json-from-string response)))
   
-  ;; Query users
-  (format t "Mito - All users:~%")
-  (dolist (user (mito:select-dao 'user))
-    (format t "  ID:~A ~A <~A>~%" 
-            (mito:object-id user) (user-name user) (user-email user))))
-
-;;; Demo CL-DBI operations (low-level SQL)
-(defun dbi-demo ()
-  "Demo CL-DBI raw SQL operations"
-  ;; Connect using DBI directly
-  (defvar *conn* (dbi:connect :sqlite3 :database-name "test.db"))
+  ;; Post new user to external API (for testing)
+  (defun post-external-user (user-data)
+    "Post user data to external API"
+    (dexador:post "https://jsonplaceholder.typicode.com/users"
+                  :headers '(("Content-Type" . "application/json"))
+                  :content (cl-json:encode-json-to-string user-data)))
   
-  ;; Raw SQL query
-  (let ((query (dbi:prepare *conn* "SELECT * FROM user")))
-    (format t "~%DBI - Raw SQL results:~%")
-    (loop for row = (dbi:fetch (dbi:execute query))
-          while row
-          do (format t "  ~A~%" row))))
+  ;; Update user via external API
+  (defun update-external-user (id user-data)
+    "Update user via external API"
+    (dexador:put (format nil "https://jsonplaceholder.typicode.com/users/~A" id)
+                 :headers '(("Content-Type" . "application/json"))
+                 :content (cl-json:encode-json-to-string user-data)))
+  
+  ;; Delete user via external API
+  (defun delete-external-user (id)
+    "Delete user via external API"
+    (dexador:delete (format nil "https://jsonplaceholder.typicode.com/users/~A" id)))
 
-;;; Combined demo
-(defun demo ()
-  "Demo both Mito and CL-DBI"
-  (mito-demo)
-  (dbi-demo))
+  ;; Database Operations - Local user management
+  
+  ;; Create new user
+  (defun create-local-user (name email &optional phone company)
+    "Create new user in local database"
+    (mito:create-dao 'user :name name :email email 
+                     :phone (or phone "") :company (or company "")))
+  
+  ;; Find user by ID
+  (defun find-user (id)
+    "Find user by ID"
+    (mito:find-dao 'user :id id))
+  
+  ;; Find user by email
+  (defun find-user-by-email (email)
+    "Find user by email address"
+    (first (mito:select-dao 'user (mito:where (:= :email email)))))
+  
+  ;; List all users
+  (defun list-users ()
+    "Get all users from database"
+    (mito:select-dao 'user))
+  
+  ;; List users with limit and offset
+  (defun list-users-paginated (limit &optional (offset 0))
+    "Get users with pagination"
+    (mito:select-dao 'user (mito:limit limit) (mito:offset offset)))
+  
+  ;; Search users by name pattern
+  (defun search-users (name-pattern)
+    "Search users by name pattern"
+    (mito:select-dao 'user (mito:where (:like :name (format nil "%~A%" name-pattern)))))
+  
+  ;; Update user
+  (defun update-user (user &key name email phone company)
+    "Update existing user with new data"
+    (when name (setf (user-name user) name))
+    (when email (setf (user-email user) email))
+    (when phone (setf (user-phone user) phone))
+    (when company (setf (user-company user) company))
+    (mito:save-dao user))
+  
+  ;; Delete user
+  (defun delete-user (user)
+    "Delete user from database"
+    (mito:delete-dao user))
+  
+  ;; Count users
+  (defun count-users ()
+    "Count total users in database"
+    (mito:count-dao 'user))
 
-;;; Usage:
-(demo)
+  ;; Data Import/Export - Moving between external API and local DB
+  
+  ;; Import users from external API to local database
+  (defun import-external-users ()
+    "Import all users from external API to local database"
+    (let ((external-users (fetch-external-users)))
+      (dolist (user-data external-users)
+        (let ((name (cdr (assoc :name user-data)))
+              (email (cdr (assoc :email user-data)))
+              (phone (cdr (assoc :phone user-data)))
+              (company (cdr (assoc :company (cdr (assoc :company user-data))))))
+          (unless (find-user-by-email email)
+            (create-local-user name email phone company)))))
+    (format t "Import completed. Total users: ~A~%" (count-users)))
+  
+  ;; Export local user to external format
+  (defun export-user-to-json (user)
+    "Convert local user to JSON format"
+    (cl-json:encode-json-to-string
+     `((:name . ,(user-name user))
+       (:email . ,(user-email user))
+       (:phone . ,(user-phone user))
+       (:company . ,(user-company user)))))
+  
+  ;; Sync user with external API
+  (defun sync-user-to-external (user)
+    "Post local user to external API"
+    (let ((user-json `((:name . ,(user-name user))
+                      (:email . ,(user-email user))
+                      (:phone . ,(user-phone user))
+                      (:company . ,(user-company user)))))
+      (post-external-user user-json)))
 
+  ;; Utility Functions - Pretty printing and debugging
+  
+  ;; Pretty print user
+  (defun print-user (user)
+    "Pretty print user information"
+    (format t "User #~A: ~A <~A>~%" 
+            (mito:object-id user) (user-name user) (user-email user))
+    (when (and (user-phone user) (not (string= (user-phone user) "")))
+      (format t "  Phone: ~A~%" (user-phone user)))
+    (when (and (user-company user) (not (string= (user-company user) "")))
+      (format t "  Company: ~A~%" (user-company user))))
+  
+  ;; Pretty print all users
+  (defun print-all-users ()
+    "Print all users in database"
+    (let ((users (list-users)))
+      (format t "~%=== Local Users (Total: ~A) ===~%" (length users))
+      (dolist (user users)
+        (print-user user))))
+  
+  ;; Print external users
+  (defun print-external-users ()
+    "Fetch and print external users"
+    (let ((users (fetch-external-users)))
+      (format t "~%=== External Users (Total: ~A) ===~%" (length users))
+      (dolist (user users)
+        (format t "~A <~A> - ~A~%" 
+                (cdr (assoc :name user))
+                (cdr (assoc :email user))
+                (cdr (assoc :phone user))))))
+
+  ;; Demo Functions - Show all features working together
+  
+  ;; Complete demo
+  (defun demo-all ()
+    "Demonstrate all user operations"
+    (format t "=== User API Demo ===~%")
+    
+    ;; 1. Create some local users
+    (format t "~%1. Creating local users...~%")
+    (create-local-user "Alice Smith" "alice@local.com" "555-0101" "Tech Corp")
+    (create-local-user "Bob Jones" "bob@local.com" "555-0102" "Design Inc")
+    
+    ;; 2. List local users
+    (print-all-users)
+    
+    ;; 3. Fetch external users
+    (format t "~%2. Fetching external users...~%")
+    (print-external-users)
+    
+    ;; 4. Import external users
+    (format t "~%3. Importing external users...~%")
+    (import-external-users)
+    (print-all-users)
+    
+    ;; 5. Search and update
+    (format t "~%4. Searching and updating...~%")
+    (let ((user (find-user-by-email "alice@local.com")))
+      (when user
+        (format t "Found user: ~A~%" (user-name user))
+        (update-user user :company "Updated Corp")
+        (format t "Updated company to: ~A~%" (user-company user))))
+    
+    ;; 6. Export user to JSON
+    (format t "~%5. Exporting user to JSON...~%")
+    (let ((user (first (list-users))))
+      (when user
+        (format t "JSON: ~A~%" (export-user-to-json user))))
+    
+    (format t "~%Demo completed!~%"))
+  
+  ;; Quick test functions
+  (defun quick-test ()
+    "Quick test of basic operations"
+    (create-local-user "Test User" "test@example.com")
+    (print-all-users)
+    (let ((user (find-user-by-email "test@example.com")))
+      (when user (delete-user user)))
+    (format t "Quick test completed~%"))
+
+  ;; Usage examples:
+  ;; (user-api:demo-all)                    ; Full demo
+  ;; (user-api:create-local-user "John" "john@test.com")
+  ;; (user-api:list-users)                  ; List all users
+  ;; (user-api:fetch-external-users)        ; Get external users
+  ;; (user-api:import-external-users)       ; Import from API
+  ;; (user-api:print-all-users)             ; Pretty print users
+)
